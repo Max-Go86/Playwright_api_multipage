@@ -29,9 +29,13 @@ app.post("/scrape", async (req, res) => {
 
     for (const path of paths) {
       const fullUrl = url.endsWith("/") ? url.slice(0, -1) + path : url + path;
+      console.log(`🔍 Visiting: ${fullUrl}`);
+
       try {
-        await page.goto(fullUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
-        await page.waitForTimeout(2000);
+        await Promise.race([
+          page.goto(fullUrl, { waitUntil: "domcontentloaded", timeout: 10000 }),
+          page.waitForTimeout(12000)
+        ]);
 
         const content = await page.evaluate(() => {
           const article = document.querySelector("article");
@@ -40,14 +44,14 @@ app.post("/scrape", async (req, res) => {
 
         fullText += `\n\n=== [${fullUrl}] ===\n\n${content}`;
       } catch (err) {
-        console.error(`Erreur en visitant ${fullUrl}`, err.message);
+        console.error(`❌ Erreur en visitant ${fullUrl}:`, err.message);
         fullText += `\n\n=== [${fullUrl}] ===\n\n[Erreur de chargement : ${err.message}]`;
       }
     }
 
     res.json({ url, text: fullText.trim() });
   } catch (err) {
-    console.error("Scraping error:", err);
+    console.error("❌ Scraping error:", err);
     res.status(500).json({ error: "Failed to scrape pages", detail: err.message });
   } finally {
     if (browser) await browser.close();
