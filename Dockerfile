@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright/node:lts
+FROM mcr.microsoft.com/playwright:v1.42.1-jammy
 
 WORKDIR /app
 
